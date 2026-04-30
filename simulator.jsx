@@ -91,9 +91,32 @@ function Dial({ value, min=2, max=10, step=0.1, onChange, sweet }) {
             {value.toFixed(2)}<span className="text-ink-400 text-[18px] font-normal">%</span>
           </div>
         </div>
+
+        {/* min/max labels at dial sweep edges */}
+        <span className="absolute bottom-7 left-6 text-[10px] num text-ink-400 font-medium pointer-events-none">{min}%</span>
+        <span className="absolute bottom-7 right-6 text-[10px] num text-ink-400 font-medium pointer-events-none">{max}%</span>
       </div>
       <div className="mt-3 text-[11px] text-ink-500 num">
         Price comfort <span className="text-navy-900 font-semibold">{sweet.toFixed(2)}%</span>
+      </div>
+
+      {/* Numeric input + step buttons (precise entry alongside the dial) */}
+      <div className="mt-2 inline-flex items-center gap-0.5 hairline rounded-md bg-paper-0 p-0.5">
+        <button onClick={()=>onChange(Math.max(min, Number((value - step).toFixed(2))))}
+          aria-label="Decrease APR"
+          className="w-6 h-6 grid place-items-center text-ink-500 hover:text-ink-900 hover:bg-paper-100 rounded">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M5 12h14"/></svg>
+        </button>
+        <input type="text" inputMode="decimal" value={value.toFixed(2)}
+          onChange={e=>{ const v=Number(e.target.value); if(!Number.isNaN(v)) onChange(Math.max(min, Math.min(max, v))); }}
+          aria-label="APR rate"
+          className="w-12 text-center bg-transparent text-[12px] num font-semibold text-ink-900 outline-none"/>
+        <span className="text-[11px] text-ink-400 mr-1">%</span>
+        <button onClick={()=>onChange(Math.min(max, Number((value + step).toFixed(2))))}
+          aria-label="Increase APR"
+          className="w-6 h-6 grid place-items-center text-ink-500 hover:text-ink-900 hover:bg-paper-100 rounded">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
       </div>
     </div>
   );
@@ -496,17 +519,15 @@ function Simulator({ archetype, product, setProduct, onPickArchetype, archetypes
         }
       />
 
-      <div className="grid grid-cols-12 gap-6 items-stretch">
+      <div className="grid grid-cols-12 gap-6 items-start">
         {/* LEFT — Setup */}
-        <section className="col-span-12 lg:col-span-4 rounded-2xl bg-paper-0 hairline h-full flex flex-col divide-y divide-ink-100/80">
+        <section className="col-span-12 lg:col-span-4 rounded-2xl bg-paper-0 hairline divide-y divide-ink-100/80">
           {/* Segment picker */}
           <div className="p-6">
             <div className="text-[11px] uppercase tracking-[0.14em] text-ink-400 font-medium mb-3">Customer segment</div>
             <button onClick={()=>setPickerOpen(o=>!o)}
               className="w-full flex items-center gap-3 text-left group">
-              <div className="w-12 h-12 rounded-full overflow-hidden bg-paper-100 ring-1 ring-ink-100 shrink-0">
-                <img src={archetype.portrait} alt="" className="w-full h-full object-cover"/>
-              </div>
+              <window.SegmentAvatar name={archetype.name} id={archetype.id} size="sm"/>
               <div className="min-w-0 flex-1">
                 <div className="text-[15px] font-semibold text-ink-900 leading-tight">
                   {archetype.name} <span className="text-ink-400 num font-normal">{archetype.age}</span>
@@ -520,9 +541,7 @@ function Simulator({ archetype, product, setProduct, onPickArchetype, archetypes
                 {archetypes.map(a => (
                   <button key={a.id} onClick={()=>pickArchetype(a)}
                     className={`w-full p-2 rounded-md flex items-center gap-2.5 text-left ${a.id===archetype.id?'bg-brand-surface':'hover:bg-paper-50'}`}>
-                    <div className="w-7 h-7 rounded-full bg-paper-100 ring-1 ring-ink-100 overflow-hidden shrink-0">
-                      <img src={a.portrait} alt="" className="w-full h-full object-cover"/>
-                    </div>
+                    <window.SegmentAvatar name={a.name} id={a.id} size="xs"/>
                     <div className="min-w-0 flex-1">
                       <div className="text-[12px] font-medium text-ink-900">{a.name}</div>
                       <div className="text-[11px] text-ink-500 truncate">{a.tagline}</div>
@@ -610,7 +629,7 @@ function Simulator({ archetype, product, setProduct, onPickArchetype, archetypes
           {/* Servicing toggles */}
           <div className="p-6">
             <div className="text-[11px] uppercase tracking-[0.14em] text-ink-400 font-medium mb-2">Servicing & cover</div>
-            <div className="divide-y divide-ink-100/80">
+            <div className="grid grid-cols-2 gap-x-4">
               <Toggle label="Digital-only onboarding" hint="No branch visit, SPID + e-sign" on={product.features.digitalOnly} onChange={v=>setFeat('digitalOnly',v)}/>
               <Toggle label="Banker or insurance advisor" hint="Optional human advisor in-app" on={product.features.advisor} onChange={v=>setFeat('advisor',v)}/>
               <Toggle label="Repayment / surrender-fee waiver" hint="No penalty for early repayment or exit" on={product.features.earlyExitWaiver} onChange={v=>setFeat('earlyExitWaiver',v)}/>
@@ -622,22 +641,26 @@ function Simulator({ archetype, product, setProduct, onPickArchetype, archetypes
           </div>
 
           {/* Run button — sits in panel footer */}
-          <div className="p-5 mt-auto">
+          <div className="p-5">
             <button onClick={runSimulation} disabled={running}
               className={`w-full py-3 rounded-xl text-[13px] font-semibold inline-flex items-center justify-center gap-2 shadow-lift transition ${running ? 'bg-brand-accent text-paper-0 cursor-wait' : 'bg-brand text-ink-900 hover:bg-brand-emphasis'}`}>
               <window.Icons.Bolt size={15}/> {running ? 'Running…' : 'Run stress test'}
             </button>
+            <p className="text-[11px] text-ink-400 mt-2 leading-snug text-center">Run a full stress test to generate the formal report.</p>
           </div>
         </section>
 
         {/* MIDDLE — Live reaction */}
-        <section className="col-span-12 lg:col-span-4 flex flex-col gap-6 h-full">
-          <div className="rounded-2xl bg-paper-0 hairline p-6 space-y-5 flex-1 flex flex-col">
-            <div className="flex items-center justify-between">
-              <h3 className="text-[15px] font-semibold text-ink-900">Customer reaction</h3>
-              <span className="inline-flex items-center gap-1.5 text-[11px] text-ink-500">
-                <span className="w-1.5 h-1.5 rounded-full bg-brand-accent animate-pulse"/> live
-              </span>
+        <section className="col-span-12 lg:col-span-4 space-y-6">
+          <div className="rounded-2xl bg-paper-0 hairline p-6 space-y-5 sticky top-[76px]">
+            <div>
+              <div className="flex items-center justify-between">
+                <h3 className="text-[15px] font-semibold text-ink-900">Customer reaction</h3>
+                <span className="inline-flex items-center gap-1.5 text-[11px] text-ink-500">
+                  <span className="w-1.5 h-1.5 rounded-full bg-brand-accent animate-pulse"/> live
+                </span>
+              </div>
+              <p className="text-[11px] text-ink-400 mt-1 leading-snug">Live preview, updates as you adjust parameters.</p>
             </div>
             <MoodVisual mood={sim.mood} score={sim.score}/>
             <blockquote className="text-[13px] text-ink-800 leading-relaxed border-l-2 border-navy-700 pl-3.5 italic">
@@ -669,11 +692,31 @@ function Simulator({ archetype, product, setProduct, onPickArchetype, archetypes
               ))}
             </div>
           </div>
+
+          {/* Evidence — moved from verdict column: lives close to the customer reaction it explains */}
+          <div className="rounded-2xl bg-paper-0 hairline p-6">
+            <h3 className="text-[15px] font-semibold text-ink-900 mb-4">Evidence</h3>
+            <div className="space-y-2.5">
+              {sim.receipts.slice(0,2).map((q,i)=>(
+                <div key={i} className="flex gap-2.5">
+                  <div className={`shrink-0 w-6 h-6 rounded-md grid place-items-center ${q.source==='x'?'bg-ink-900 text-paper-0':'bg-paper-100 text-ink-700'}`}>
+                    <SourceIcon src={q.source}/>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[12px] text-ink-800 leading-snug">{q.text}</p>
+                    <div className="text-[11px] text-ink-400 mt-1 num">
+                      {q.source==='x'? q.handle : `${q.author} · ${q.sub}`}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
 
         {/* RIGHT — Verdict */}
-        <section className="col-span-12 lg:col-span-4 h-full">
-          <div className="rounded-2xl bg-paper-0 hairline h-full flex flex-col divide-y divide-ink-100/80">
+        <section className="col-span-12 lg:col-span-4">
+          <div className="rounded-2xl bg-paper-0 hairline divide-y divide-ink-100/80">
             {/* Hero verdict */}
             <div className={`p-6 ${verdictColor.bg} rounded-t-2xl`}>
               <div className="flex items-center justify-between mb-3">
@@ -746,28 +789,8 @@ function Simulator({ archetype, product, setProduct, onPickArchetype, archetypes
               )}
             </div>
 
-            {/* Evidence */}
-            <div className="p-6 space-y-3">
-              <h4 className="text-[13px] font-semibold text-ink-900">Evidence</h4>
-              <div className="space-y-2.5">
-                {resultSim.receipts.slice(0,2).map((q,i)=>(
-                  <div key={i} className="flex gap-2.5">
-                    <div className={`shrink-0 w-6 h-6 rounded-md grid place-items-center ${q.source==='x'?'bg-ink-900 text-paper-0':'bg-paper-100 text-ink-700'}`}>
-                      <SourceIcon src={q.source}/>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[12px] text-ink-800 leading-snug">{q.text}</p>
-                      <div className="text-[11px] text-ink-400 mt-1 num">
-                        {q.source==='x'? q.handle : `${q.author} · ${q.sub}`}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             {/* Footer */}
-            <div className="p-5 mt-auto">
+            <div className="p-5">
               <button onClick={tryNextArchetype}
                 className="w-full py-2.5 rounded-md text-[12px] font-medium text-ink-700 hover:bg-paper-50 inline-flex items-center justify-center gap-1.5">
                 Try another segment <window.Icons.ArrowRight size={13}/>

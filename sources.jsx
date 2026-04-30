@@ -2,29 +2,29 @@
 function IntegrationRow({ icon, name, hint, status, last, count, onResync, onConfigure }) {
   const live = status === 'connected';
   return (
-    <div className="rounded-xl hairline bg-paper-0 px-4 py-3 flex items-center gap-4">
+    <div className="rounded-xl hairline bg-paper-0 px-4 py-3 flex items-center gap-3">
       <div className="w-9 h-9 rounded-lg bg-paper-100 grid place-items-center text-ink-700 shrink-0">{icon}</div>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <div className="text-[13px] font-semibold text-ink-900 truncate">{name}</div>
-          <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded-full ${live?'bg-brand-surface text-navy-900':'bg-paper-100 text-ink-500'}`}>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <div className="text-[13px] font-semibold text-ink-900">{name}</div>
+          <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded-full shrink-0 ${live?'bg-brand-surface text-navy-900':'bg-paper-100 text-ink-500'}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${live?'bg-brand-accent animate-pulse':'bg-ink-300'}`}/>
             {live?'Connected':'Idle'}
           </span>
         </div>
-        <div className="text-[12px] text-ink-500 truncate">{hint}</div>
-      </div>
-      <div className="hidden md:block text-right shrink-0 pr-2">
-        <div className="text-[11px] uppercase tracking-wider text-ink-400">Last sync</div>
-        <div className="num text-[12px] text-ink-800 font-medium">{last}</div>
-      </div>
-      <div className="hidden lg:block text-right shrink-0 pr-2 min-w-[120px]">
-        <div className="text-[11px] uppercase tracking-wider text-ink-400">Records</div>
-        <div className="num text-[12px] text-ink-800 font-medium">{count}</div>
+        <div className="text-[12px] text-ink-500 truncate mt-0.5">{hint}</div>
+        <div className="text-[11px] text-ink-400 num mt-1 flex flex-wrap items-center gap-x-2">
+          <span>{count}</span>
+          <span className="text-ink-300">·</span>
+          <span>{last}</span>
+        </div>
       </div>
       <div className="flex items-center gap-1 shrink-0">
         <button onClick={onResync} className="px-2.5 py-1.5 rounded-md text-[12px] font-medium hairline bg-paper-0 text-ink-700 hover:bg-paper-50">{live?'Re-sync':'Connect'}</button>
-        <button onClick={onConfigure} className="px-2 py-1.5 rounded-md text-[12px] text-ink-500 hover:text-ink-900 hover:bg-paper-100">Configure</button>
+        <button onClick={onConfigure} aria-label="Configure" className="hidden sm:inline-flex px-2 py-1.5 rounded-md text-[12px] text-ink-500 hover:text-ink-900 hover:bg-paper-100">Configure</button>
+        <button onClick={onConfigure} aria-label="Configure" className="sm:hidden w-8 h-8 grid place-items-center rounded-md text-ink-500 hover:text-ink-900 hover:bg-paper-100">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+        </button>
       </div>
     </div>
   );
@@ -144,25 +144,6 @@ function SignalsTile({ logo, name, color, terms, accounts, posts, rate, sub, ref
   );
 }
 
-function InflowIndicator({ totalItems }) {
-  return (
-    <div className="rounded-xl bg-brand-surface border border-green-200 px-4 py-2.5 flex items-center gap-3">
-      <div className="relative w-8 h-8 grid place-items-center">
-        <span className="absolute inset-0 rounded-full bg-green-300/40 pulse-ring"/>
-        <span className="relative w-3 h-3 rounded-full bg-brand"/>
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-[12px] font-semibold text-navy-900">Receiving data</div>
-        <div className="text-[11px] text-navy-900/80 num">{totalItems.toLocaleString()} records collected · updates flowing in real time</div>
-      </div>
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-navy-700">
-        <path d="M12 19V5"/>
-        <path d="m6 11 6-6 6 6"/>
-      </svg>
-    </div>
-  );
-}
-
 function Sources({ data, onPrimary, onToast }) {
   const [connectors, setConnectors] = useState(data.company);
   const [totalItems, setTotalItems] = useState(12718);
@@ -206,8 +187,6 @@ function Sources({ data, onPrimary, onToast }) {
       />
 
       <window.StatusStrip onPrimary={onPrimary} onToast={onToast} logItems={activity} itemCount={totalItems} sourceCount={connectors.length + 3}/>
-
-      <InflowIndicator totalItems={totalItems}/>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* LEFT — Internal data */}

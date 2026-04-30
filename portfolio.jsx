@@ -28,19 +28,19 @@ function ProductCard({ product, isActive, onMakeActive, onOpenSimulator }) {
       </div>
 
       <div className="grid grid-cols-4 gap-2 text-[12px]">
-        <div className="rounded-lg hairline p-2.5">
+        <div className="p-2.5">
           <div className="text-[11px] uppercase tracking-wider text-ink-400">Rate</div>
           <div className="num text-ink-900 font-medium mt-0.5">{product.rate.toFixed(2)}%</div>
         </div>
-        <div className="rounded-lg hairline p-2.5">
+        <div className="p-2.5">
           <div className="text-[11px] uppercase tracking-wider text-ink-400">Term</div>
           <div className="num text-ink-900 font-medium mt-0.5">{product.term} mo</div>
         </div>
-        <div className="rounded-lg hairline p-2.5">
+        <div className="p-2.5">
           <div className="text-[11px] uppercase tracking-wider text-ink-400">Amount</div>
           <div className="num text-ink-900 font-medium mt-0.5">{formatAmount(product.amount)}</div>
         </div>
-        <div className="rounded-lg hairline p-2.5">
+        <div className="p-2.5">
           <div className="text-[11px] uppercase tracking-wider text-ink-400">Records</div>
           <div className="num text-ink-900 font-medium mt-0.5">{product.items}</div>
         </div>

@@ -9,26 +9,30 @@ function SideRail({ screen, setScreen }) {
     { id:'simulator', label:'Simulator', Icon: window.Icons.Simulator },
   ];
   return (
-    <aside className="fixed left-0 top-0 bottom-0 w-[72px] bg-paper-0 border-r border-ink-100/80 flex flex-col items-center py-5 z-30">
-      <div className="w-10 h-10 rounded-xl bg-navy-900 text-paper-0 grid place-items-center mb-6">
-        <window.Icons.Logo size={20} />
+    <aside className="fixed left-0 top-0 bottom-0 w-[72px] bg-paper-0 flex flex-col items-center z-30">
+      <div className="h-[60px] w-full grid place-items-center shrink-0">
+        <div className="w-10 h-10 rounded-xl bg-navy-900 text-paper-0 grid place-items-center">
+          <window.Icons.Logo size={20} />
+        </div>
       </div>
-      <nav className="flex flex-col gap-1 items-center">
-        {items.map(({id,label,Icon}) => {
-          const active = screen === id;
-          return (
-            <button key={id} onClick={()=>setScreen(id)}
-              className={`group relative w-12 h-12 rounded-xl grid place-items-center transition
-                ${active ? 'bg-brand-surface text-navy-900' : 'text-ink-500 hover:text-ink-900 hover:bg-paper-100'}`}>
-              <Icon size={20} stroke={active?1.8:1.6}/>
-              <span className="absolute left-full ml-3 px-2 py-1 rounded-md bg-ink-900 text-paper-0 text-[11px] font-medium opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">{label}</span>
-              {active && <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-brand"/>}
-            </button>
-          );
-        })}
-      </nav>
-      <div className="mt-auto flex flex-col items-center gap-2 text-ink-400">
-        <div className="w-9 h-9 rounded-full bg-paper-100 grid place-items-center text-[11px] font-semibold text-ink-700">FT</div>
+      <div className="w-full flex-1 flex flex-col items-center border-r border-ink-100/80 py-5">
+        <nav className="flex flex-col gap-1 items-center">
+          {items.map(({id,label,Icon}) => {
+            const active = screen === id;
+            return (
+              <button key={id} onClick={()=>setScreen(id)}
+                className={`group relative w-12 h-12 rounded-xl grid place-items-center transition
+                  ${active ? 'bg-brand-surface text-navy-900' : 'text-ink-500 hover:text-ink-900 hover:bg-paper-100'}`}>
+                <Icon size={20} stroke={active?1.8:1.6}/>
+                <span className="absolute left-full ml-3 px-2 py-1 rounded-md bg-ink-900 text-paper-0 text-[11px] font-medium opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">{label}</span>
+                {active && <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-brand"/>}
+              </button>
+            );
+          })}
+        </nav>
+        <div className="mt-auto flex flex-col items-center gap-2 text-ink-400">
+          <div className="w-9 h-9 rounded-full bg-paper-100 grid place-items-center text-[11px] font-semibold text-ink-700">FT</div>
+        </div>
       </div>
     </aside>
   );
@@ -69,7 +73,7 @@ function TenantSwitcher({ orgs=[], activeOrgId, activeProductId, onSelectOrg, on
   return (
     <div ref={ref} className="relative shrink-0 self-center">
       <button onClick={()=>setOpen(o=>!o)}
-        className="w-[270px] rounded-lg hairline bg-paper-0 hover:bg-paper-50 px-3 py-2 text-left flex items-center gap-3">
+        className="w-[270px] rounded-lg bg-paper-0 hover:bg-paper-50 px-3 py-2 text-left flex items-center gap-3">
         <div className="w-8 h-8 rounded-md bg-navy-900 text-paper-0 grid place-items-center text-[11px] font-semibold">
           {activeOrg.name.split(' ').map(part => part[0]).join('').slice(0,2)}
         </div>
@@ -175,7 +179,7 @@ function TopBar({
   }, []);
 
   return (
-    <header className="hairline-b bg-paper-0/90 backdrop-blur sticky top-0 z-20">
+    <header className="bg-paper-0/90 backdrop-blur sticky top-0 z-20">
       <div className="max-w-[1440px] mx-auto px-8 h-[60px] flex items-center gap-5">
         <TenantSwitcher
           orgs={orgs}
@@ -293,8 +297,33 @@ function SectionHeader({ eyebrow, title, sub, right }) {
   );
 }
 
+// Initial-on-color avatar for customer segments — abstract identity, deterministic color cycle
+function SegmentAvatar({ name, id, size = 'md', className = '' }) {
+  const palette = [
+    'bg-navy-900 text-paper-0',
+    'bg-brand-accent text-paper-0',
+    'bg-navy-700 text-paper-0',
+    'bg-ink-700 text-paper-0',
+    'bg-green-700 text-paper-0',
+  ];
+  const hash = String(id || name || '').split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  const tone = palette[hash % palette.length];
+  const initial = (name?.charAt(0) || '?').toUpperCase();
+  const sizeCls = {
+    xs: 'w-7 h-7 text-[11px]',
+    sm: 'w-12 h-12 text-[15px]',
+    md: 'w-16 h-16 text-[20px]',
+  }[size] || 'w-16 h-16 text-[20px]';
+  return (
+    <div className={`rounded-full grid place-items-center shrink-0 font-semibold tracking-[-0.02em] select-none ${sizeCls} ${tone} ${className}`} aria-hidden="true">
+      {initial}
+    </div>
+  );
+}
+
 window.SideRail = SideRail;
 window.TopBar = TopBar;
 window.StatusStrip = StatusStrip;
 window.Pill = Pill;
 window.SectionHeader = SectionHeader;
+window.SegmentAvatar = SegmentAvatar;

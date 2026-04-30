@@ -143,6 +143,7 @@ function App() {
   return (
     <div className="min-h-screen">
       <window.SideRail screen={screen} setScreen={setScreen}/>
+      <div className="fixed top-[60px] left-0 right-0 h-px bg-ink-100/80 z-40 pointer-events-none" aria-hidden="true"/>
       <div className="pl-[72px]">
         <window.TopBar
           project={`${activeProduct.name} · ${activeProduct.segment}`}
