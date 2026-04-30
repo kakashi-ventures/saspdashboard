@@ -10,7 +10,7 @@ function SideRail({ screen, setScreen }) {
   ];
   return (
     <aside className="fixed left-0 top-0 bottom-0 w-[72px] bg-paper-0 flex flex-col items-center z-30">
-      <div className="h-[60px] w-full grid place-items-center border-b border-ink-100/80 shrink-0">
+      <div className="h-[61px] w-full grid place-items-center border-b border-ink-100/80 shrink-0">
         <div className="w-10 h-10 rounded-xl bg-navy-900 text-paper-0 grid place-items-center">
           <window.Icons.Logo size={20} />
         </div>
