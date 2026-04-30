@@ -4,7 +4,7 @@ const { Pill, SectionHeader } = window;
 const CHANNEL_LABEL = { digital:'Digital servicing', hybrid:'Hybrid advisory', branch:'Branch advisory' };
 const COMMS_LABEL = { formal:'Formal', friendly:'Friendly', technical:'Technical' };
 
-function BandRow({ label, value, range, domainMin, domainMax }) {
+function BandRow({ label, value, range, domainMin, domainMax, formatBound = (n) => `${n}` }) {
   const span = domainMax - domainMin;
   const left = ((range.min - domainMin) / span) * 100;
   const right = ((range.max - domainMin) / span) * 100;
@@ -15,9 +15,11 @@ function BandRow({ label, value, range, domainMin, domainMax }) {
         <span className="text-[12px] text-ink-500">{label}</span>
         <span className="text-[12px] num text-ink-900 font-semibold tracking-tight">{value}</span>
       </div>
-      <div className="relative h-1.5 rounded-full bg-paper-200">
+      <div className="relative h-1.5 rounded-full bg-paper-200 mb-4">
         <div className="absolute inset-y-0 bg-brand-surface rounded-full" style={{ left:`${left}%`, width:`${right-left}%` }}/>
         <div className="absolute -top-1 -bottom-1 w-[2px] bg-navy-900 rounded-full" style={{ left:`calc(${sweet}% - 1px)` }}/>
+        <span className="absolute top-3 text-[10px] num text-ink-400 -translate-x-1/2 pointer-events-none whitespace-nowrap" style={{ left:`${left}%` }}>{formatBound(range.min)}</span>
+        <span className="absolute top-3 text-[10px] num text-ink-400 -translate-x-1/2 pointer-events-none whitespace-nowrap" style={{ left:`${right}%` }}>{formatBound(range.max)}</span>
       </div>
     </div>
   );
@@ -38,10 +40,7 @@ function ArchetypeCard({ a, onUse, density, onToast }) {
       {/* Hero */}
       <div className="p-6 pb-5 flex flex-col gap-5 flex-1">
         <header className="flex items-start gap-4">
-          <div className="w-16 h-16 rounded-full overflow-hidden bg-paper-100 ring-1 ring-ink-100 shrink-0">
-            <img src={a.portrait} alt="" className="w-full h-full object-cover" loading="lazy"
-                 onError={(e)=>{ e.currentTarget.style.display='none'; }}/>
-          </div>
+          <window.SegmentAvatar name={a.name} id={a.id} size="md"/>
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline gap-2">
               <h3 className="text-[18px] leading-tight font-semibold tracking-[-0.01em] text-ink-900 truncate">{a.name}</h3>
@@ -49,8 +48,11 @@ function ArchetypeCard({ a, onUse, density, onToast }) {
             </div>
             <p className="text-[12px] text-ink-500 leading-snug mt-1 line-clamp-2">{a.tagline}</p>
           </div>
-          <div className="rounded-full px-2.5 py-1 bg-brand-surface text-navy-900 text-[12px] font-semibold num shrink-0 ring-1 ring-navy-900/10">
-            {a.matchScore}
+          <div className="flex flex-col items-end shrink-0" title="Confidence score: how strongly your data supports this segment, 0–100.">
+            <div className="rounded-full px-2.5 py-1 bg-brand-surface text-navy-900 text-[12px] font-semibold num ring-1 ring-navy-900/10">
+              {a.matchScore}
+            </div>
+            <div className="text-[10px] uppercase tracking-[0.14em] text-ink-400 font-medium mt-1">Match</div>
           </div>
         </header>
 
@@ -77,6 +79,7 @@ function ArchetypeCard({ a, onUse, density, onToast }) {
               range={a.rate}
               domainMin={3.5}
               domainMax={8}
+              formatBound={(n)=>`${n.toFixed(2)}%`}
             />
             <BandRow
               label="Term horizon"
@@ -84,16 +87,16 @@ function ArchetypeCard({ a, onUse, density, onToast }) {
               range={a.term}
               domainMin={12}
               domainMax={84}
+              formatBound={(n)=>`${n} mo`}
             />
           </div>
         )}
 
         {/* Servicing line */}
         {!compact && (
-          <div className="flex items-center gap-2 text-[12px] text-ink-700">
-            <span className="font-medium text-ink-800">{CHANNEL_LABEL[a.channel]}</span>
-            <span className="text-ink-300">·</span>
-            <span className="text-ink-500">{COMMS_LABEL[a.comms]} tone</span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Pill tone="ink" size="xs">{CHANNEL_LABEL[a.channel]}</Pill>
+            <Pill tone="outline" size="xs">{COMMS_LABEL[a.comms]} tone</Pill>
           </div>
         )}
 
@@ -119,6 +122,7 @@ function ArchetypeCard({ a, onUse, density, onToast }) {
               range={a.rate}
               domainMin={3.5}
               domainMax={8}
+              formatBound={(n)=>`${n.toFixed(2)}%`}
             />
           </div>
         )}
@@ -250,7 +254,7 @@ function Audiences({ archetypes, onUse, density, setDensity, lastGenerated='09:1
           <span className="font-medium text-ink-700 num">+{newContacts}</span> CRM records
         </span>
         <div className="ml-auto flex items-center gap-3">
-          <span className="text-[11px] uppercase tracking-[0.12em] text-ink-400">Density</span>
+          <span className="text-[11px] uppercase tracking-[0.12em] text-ink-400">Show</span>
           <div className="hairline rounded-md flex p-0.5 bg-paper-0">
             {[4,6,8].map(n => (
               <button key={n} onClick={()=>changeDensity(n)}
@@ -280,7 +284,7 @@ function Audiences({ archetypes, onUse, density, setDensity, lastGenerated='09:1
 
       {visible.length > density && (
         <div className="text-center text-[12px] text-ink-400">
-          Showing {density} of {visible.length} customer segments — increase density above to see more.
+          Showing {density} of {visible.length} customer segments — show more above to see additional segments.
         </div>
       )}
     </div>

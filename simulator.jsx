@@ -527,9 +527,7 @@ function Simulator({ archetype, product, setProduct, onPickArchetype, archetypes
             <div className="text-[11px] uppercase tracking-[0.14em] text-ink-400 font-medium mb-3">Customer segment</div>
             <button onClick={()=>setPickerOpen(o=>!o)}
               className="w-full flex items-center gap-3 text-left group">
-              <div className="w-12 h-12 rounded-full overflow-hidden bg-paper-100 ring-1 ring-ink-100 shrink-0">
-                <img src={archetype.portrait} alt="" className="w-full h-full object-cover"/>
-              </div>
+              <window.SegmentAvatar name={archetype.name} id={archetype.id} size="sm"/>
               <div className="min-w-0 flex-1">
                 <div className="text-[15px] font-semibold text-ink-900 leading-tight">
                   {archetype.name} <span className="text-ink-400 num font-normal">{archetype.age}</span>
@@ -543,9 +541,7 @@ function Simulator({ archetype, product, setProduct, onPickArchetype, archetypes
                 {archetypes.map(a => (
                   <button key={a.id} onClick={()=>pickArchetype(a)}
                     className={`w-full p-2 rounded-md flex items-center gap-2.5 text-left ${a.id===archetype.id?'bg-brand-surface':'hover:bg-paper-50'}`}>
-                    <div className="w-7 h-7 rounded-full bg-paper-100 ring-1 ring-ink-100 overflow-hidden shrink-0">
-                      <img src={a.portrait} alt="" className="w-full h-full object-cover"/>
-                    </div>
+                    <window.SegmentAvatar name={a.name} id={a.id} size="xs"/>
                     <div className="min-w-0 flex-1">
                       <div className="text-[12px] font-medium text-ink-900">{a.name}</div>
                       <div className="text-[11px] text-ink-500 truncate">{a.tagline}</div>

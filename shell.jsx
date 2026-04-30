@@ -297,8 +297,33 @@ function SectionHeader({ eyebrow, title, sub, right }) {
   );
 }
 
+// Initial-on-color avatar for customer segments — abstract identity, deterministic color cycle
+function SegmentAvatar({ name, id, size = 'md', className = '' }) {
+  const palette = [
+    'bg-navy-900 text-paper-0',
+    'bg-brand-accent text-paper-0',
+    'bg-navy-700 text-paper-0',
+    'bg-ink-700 text-paper-0',
+    'bg-green-700 text-paper-0',
+  ];
+  const hash = String(id || name || '').split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  const tone = palette[hash % palette.length];
+  const initial = (name?.charAt(0) || '?').toUpperCase();
+  const sizeCls = {
+    xs: 'w-7 h-7 text-[11px]',
+    sm: 'w-12 h-12 text-[15px]',
+    md: 'w-16 h-16 text-[20px]',
+  }[size] || 'w-16 h-16 text-[20px]';
+  return (
+    <div className={`rounded-full grid place-items-center shrink-0 font-semibold tracking-[-0.02em] select-none ${sizeCls} ${tone} ${className}`} aria-hidden="true">
+      {initial}
+    </div>
+  );
+}
+
 window.SideRail = SideRail;
 window.TopBar = TopBar;
 window.StatusStrip = StatusStrip;
 window.Pill = Pill;
 window.SectionHeader = SectionHeader;
+window.SegmentAvatar = SegmentAvatar;
