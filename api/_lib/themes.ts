@@ -45,8 +45,18 @@ export const THEMES: ThemeDef[] = [
   {
     id: 'F',
     label: 'Market context — erogato, surroghe, BCE policy timing',
-    description: 'Macro / market context: aggregate mortgage volumes, surroghe trends, BCE policy timing, market commentary.',
-    keywords: ['erogato', 'surroghe', 'banca d\'italia', 'bankitalia', 'mercato', 'q1', 'q2', 'q3', 'q4', '2024', '2025', '2026', 'crescita', 'andamento'],
+    description: 'Macro / market context: aggregate mortgage volumes, surroghe trends, BCE policy timing, fiscal policy, tax incentives, regulatory dynamics shaping Italian retail finance.',
+    keywords: [
+      // mortgage market specifics
+      'erogato', 'surroghe', 'banca d\'italia', 'bankitalia',
+      // generic market / temporal
+      'mercato', 'q1', 'q2', 'q3', 'q4', 'crescita', 'andamento',
+      // fiscal policy / tax incentives that shape applicant context
+      'bonus', 'decreto', 'legge di bilancio', 'agevolazione', 'sgravio',
+      'credito d\'imposta', 'credito imposta', 'fisco', 'tasse', 'iva',
+      'banca', 'banche', 'finanza', 'finanziamento', 'risparmio',
+      'bot', 'btp', 'zes', 'ristrutturazione', 'abitazione',
+    ],
   },
 ];
 
