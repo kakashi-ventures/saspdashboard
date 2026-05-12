@@ -149,7 +149,8 @@ function App() {
     setArchetypes(nextArchetypes);
     setSources(getSourcesFor(newProduct.id));
     setArchetype(nextArchetypes[0]);
-    showToast('Product created', `${newProduct.name} is now active with ${nextArchetypes.length} fabricated segments.`);
+    setScreen('sources');
+    showToast('Product created', `${newProduct.name} is now active — review its signals.`);
   };
 
   const handleSave = () => {
