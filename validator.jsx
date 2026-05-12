@@ -228,10 +228,7 @@ function App() {
     }
   }, [password]);
 
-  if (!password) {
-    return <Login onSubmit={save} error={authError}/>;
-  }
-
+  // NOTE: this useMemo must stay BEFORE any conditional return — Rules of Hooks.
   const lastRunSummary = useMemo(() => {
     if (!lastRun) return 'never';
     const when = new Date(lastRun.ts).toLocaleString();
@@ -239,6 +236,10 @@ function App() {
     if (lastRun.error) parts.push('⚠ ' + lastRun.error.split('|')[0].trim());
     return `${when} · ${parts.join(' · ')}`;
   }, [lastRun]);
+
+  if (!password) {
+    return <Login onSubmit={save} error={authError}/>;
+  }
 
   return (
     <div className="min-h-screen">
