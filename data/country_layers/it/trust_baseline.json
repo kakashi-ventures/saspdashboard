@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "source": "ESS11 e04.1",
+    "doi": "10.21338/ess11e04_1",
+    "fieldwork": "2023-2024",
+    "country": "IT",
+    "raw_n": 2865,
+    "effective_n": 2554.7,
+    "weight": "pspwght",
+    "generated_from": "trust_marginals_it_population.json"
+  },
+  "scale": {
+    "min": 0,
+    "max": 10,
+    "neutral_baseline": 4.4
+  },
+  "social_trust": {
+    "composite_mean": 4.385,
+    "items": {
+      "ppltrst": 4.49,
+      "pplfair": 4.542,
+      "pplhlp": 4.125
+    }
+  },
+  "institutional_trust": {
+    "items": {
+      "trstprl": 4.305,
+      "trstlgl": 5.41,
+      "trstplc": 6.537,
+      "trstplt": 3.295,
+      "trstprt": 3.257,
+      "trstep": 4.519
+    },
+    "composite_mean": 4.554
+  },
+  "trust_score_anchor": {
+    "value": 4.4,
+    "derivation": "social_trust.composite_mean (4.385) rounded to 1 decimal. Social composite chosen over a combined social+institutional mean because (a) it's the cleaner construct, and (b) institutional trust is highly institution-specific in IT (police 6.5 vs politicians 3.3 vs parties 3.3) and shouldn't be averaged into a single number.",
+    "use": "neutral-archetype Trust score on 0-10 scale"
+  }
+}

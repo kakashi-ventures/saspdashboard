@@ -62,7 +62,7 @@ function ProductCard({ product, isActive, onMakeActive, onOpenSimulator }) {
         </button>
         <button onClick={onOpenSimulator}
           className="px-3 py-1.5 rounded-md text-[12px] font-medium bg-ink-900 text-paper-0 hover:bg-brand-emphasis inline-flex items-center gap-1.5">
-          Open simulator <window.Icons.ArrowRight size={12}/>
+          <window.Icons.Spark size={12}/> Generate social signals
         </button>
       </div>
     </div>
@@ -231,9 +231,37 @@ function CreateProductModal({ orgName, defaultRegion, onCancel, onSubmit }) {
   );
 }
 
-function Portfolio({ orgs=[], activeOrgId, activeProductId, onSelectOrg, onSelectProduct, onCreateProduct, onOpenSimulator, onToast }) {
+function EmptyPortfolio({ onCreate, orgName }) {
+  return (
+    <div className="relative">
+      {/* Arrow pointing at the New product button in the section header (top-right) */}
+      <div className="absolute -top-16 right-2 pointer-events-none hidden md:flex flex-col items-end animate-bounce z-10">
+        <div className="text-[12px] font-semibold text-navy-900 bg-brand-surface border border-green-200 rounded-full px-3 py-1 shadow-lift mb-1">
+          Start here ↗
+        </div>
+      </div>
+      <div className="rounded-2xl border-2 border-dashed border-ink-200 bg-paper-0 p-10 text-center">
+        <div className="mx-auto w-14 h-14 rounded-full bg-brand-surface grid place-items-center text-navy-900">
+          <window.Icons.Plus size={24}/>
+        </div>
+        <div className="text-[18px] font-semibold text-ink-900 mt-4">Welcome to {orgName}</div>
+        <div className="text-[13px] text-ink-500 mt-1.5 max-w-[52ch] mx-auto leading-snug">
+          You don't have any products yet. Create your first one to fabricate an audience, surface social signals, and try the offer simulator.
+        </div>
+        <button onClick={onCreate}
+          className="mt-5 px-4 py-2 rounded-md text-[13px] font-semibold bg-brand text-ink-900 hover:bg-brand-emphasis inline-flex items-center gap-1.5">
+          <window.Icons.Plus size={13}/> Create your first product
+        </button>
+        <div className="text-[11px] text-ink-400 mt-3">Takes ~30 seconds — name, type, region, target segment.</div>
+      </div>
+    </div>
+  );
+}
+
+function Portfolio({ orgs=[], activeOrgId, activeProductId, onSelectOrg, onSelectProduct, onCreateProduct, onCreateOrg, onOpenSimulator, onToast }) {
   const [showOrgPicker, setShowOrgPicker] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [showCreateOrg, setShowCreateOrg] = useState(false);
   const pickerRef = useRef(null);
 
   const activeOrg = orgs.find(org => org.id === activeOrgId) || orgs[0];
@@ -265,7 +293,11 @@ function Portfolio({ orgs=[], activeOrgId, activeProductId, onSelectOrg, onSelec
     onCreateProduct?.({ ...payload, orgId: activeOrg.id });
   };
   const createOrg = () => {
-    onToast?.('Create new organization', 'Mock: would open organization onboarding.');
+    setShowCreateOrg(true);
+  };
+  const handleSubmitOrg = ({ name }) => {
+    setShowCreateOrg(false);
+    onCreateOrg?.({ name });
   };
 
   return (
@@ -332,21 +364,25 @@ function Portfolio({ orgs=[], activeOrgId, activeProductId, onSelectOrg, onSelec
       </div>
 
       {/* Product grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {activeOrg.products.map(product => {
-          const isActive = product.id === activeProductId;
-          return (
-            <ProductCard
-              key={product.id}
-              product={product}
-              isActive={isActive}
-              onMakeActive={()=>makeActive(product)}
-              onOpenSimulator={()=>openSimulator(product)}
-            />
-          );
-        })}
-        <CreateProductCard onClick={createProduct}/>
-      </div>
+      {activeOrg.products.length === 0 ? (
+        <EmptyPortfolio onCreate={createProduct} orgName={activeOrg.name}/>
+      ) : (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          {activeOrg.products.map(product => {
+            const isActive = product.id === activeProductId;
+            return (
+              <ProductCard
+                key={product.id}
+                product={product}
+                isActive={isActive}
+                onMakeActive={()=>makeActive(product)}
+                onOpenSimulator={()=>openSimulator(product)}
+              />
+            );
+          })}
+          <CreateProductCard onClick={createProduct}/>
+        </div>
+      )}
 
       {showCreate && (
         <CreateProductModal
@@ -356,6 +392,65 @@ function Portfolio({ orgs=[], activeOrgId, activeProductId, onSelectOrg, onSelec
           onSubmit={handleSubmitProduct}
         />
       )}
+
+      {showCreateOrg && (
+        <CreateOrgModal
+          onCancel={()=>setShowCreateOrg(false)}
+          onSubmit={handleSubmitOrg}
+        />
+      )}
+    </div>
+  );
+}
+
+function CreateOrgModal({ onCancel, onSubmit }) {
+  const [name, setName] = useState('');
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onCancel?.(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onCancel]);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    onSubmit?.({ name: name.trim() });
+  };
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-ink-900/40 backdrop-blur-sm p-4" onMouseDown={onCancel}>
+      <form
+        onSubmit={handleSubmit}
+        onMouseDown={(e)=>e.stopPropagation()}
+        className="w-full max-w-[460px] rounded-2xl bg-paper-0 shadow-lift hairline overflow-hidden">
+        <header className="px-6 pt-5 pb-3 flex items-start justify-between gap-4">
+          <div>
+            <div className="text-[11px] uppercase tracking-[0.14em] text-ink-400 font-medium">New organization</div>
+            <div className="text-[18px] font-semibold text-ink-900 mt-0.5 leading-tight">Add another workspace</div>
+            <div className="text-[12px] text-ink-500 mt-1 max-w-[42ch]">Each organization has its own product catalog and signal stream.</div>
+          </div>
+          <button type="button" onClick={onCancel} className="text-ink-400 hover:text-ink-900 p-1 -m-1">
+            <window.Icons.X size={14}/>
+          </button>
+        </header>
+        <div className="px-6 py-4">
+          <label className="block">
+            <span className="text-[11px] uppercase tracking-[0.12em] text-ink-400 font-medium">Organization name</span>
+            <input autoFocus type="text" value={name}
+              onChange={(e)=>setName(e.target.value)}
+              placeholder="e.g. Banca Esempio Italia"
+              className="mt-1.5 w-full rounded-md hairline bg-paper-0 px-3 py-2.5 text-[14px] text-ink-900 outline-none focus:ring-2 focus:ring-brand"/>
+          </label>
+        </div>
+        <footer className="px-6 py-4 bg-paper-50 border-t border-ink-100 flex items-center justify-end gap-2">
+          <button type="button" onClick={onCancel}
+            className="px-3 py-1.5 rounded-md text-[12px] font-medium text-ink-500 hover:text-ink-900 hover:bg-paper-100">
+            Cancel
+          </button>
+          <button type="submit" disabled={!name.trim()}
+            className={`px-3.5 py-1.5 rounded-md text-[12px] font-semibold inline-flex items-center gap-1.5 ${name.trim() ? 'bg-brand text-ink-900 hover:bg-brand-emphasis' : 'bg-paper-100 text-ink-400 cursor-not-allowed'}`}>
+            <window.Icons.Plus size={12}/> Create organization
+          </button>
+        </footer>
+      </form>
     </div>
   );
 }

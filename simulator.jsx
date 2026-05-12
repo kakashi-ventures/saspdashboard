@@ -272,6 +272,72 @@ function SelectField({ label, hint, value, options, onChange }) {
   );
 }
 
+// Trust axis (0-10), anchored to ESS11 IT social-trust composite (4.385).
+// Mirrored in data/country_layers/it/trust_baseline.json.
+//
+// Math: additive per item. For each entry in archetype.distrust / archetype.likes,
+// the first matching category contributes its weight (first-match-wins so a
+// single phrase isn't double-counted). Multiple items in the same category DO
+// accumulate. Penalty/bonus totals are then clamped before being applied.
+function computeTrust(archetype) {
+  const baseline = window.SASP_DATA?.countryLayers?.it?.trustBaseline?.anchor ?? 4.4;
+  const deltas = [];
+  const distrust = (archetype.distrust || []).map(s => s.toLowerCase());
+  const likes    = (archetype.likes    || []).map(s => s.toLowerCase());
+
+  const distrustHits = [
+    [/big bank|long contract|relationship manager/, 0.6, 'distrust of incumbents/contracts'],
+    [/hidden|bundled|upsell|insurance/,             0.5, 'distrust of bundled/hidden fees'],
+    [/red tape|kyc|paper|paperwork|income.?proof/,  0.4, 'distrust of bureaucratic friction'],
+    [/rigid|inflexible|schedule/,                   0.3, 'distrust of rigid schedules'],
+  ];
+  let distrustPenalty = 0;
+  distrust.forEach(item => {
+    for (const [re, w, why] of distrustHits) {
+      if (re.test(item)) {
+        distrustPenalty += w;
+        deltas.push({ delta: -w, why: `"${item}" → ${why}` });
+        break;
+      }
+    }
+  });
+  distrustPenalty = Math.min(distrustPenalty, 2.0);
+
+  const likeHits = [
+    [/transparent|clear|breakdown|amortization|open.?banking|api/, 0.4, 'values transparency'],
+    [/digital|mobile|signature|self.?serve/,                       0.3, 'comfortable with digital'],
+    [/flexible|pause|early repayment|exit/,                        0.3, 'rewards optionality'],
+    [/fixed rate|no hidden|no fees/,                               0.3, 'values pricing certainty'],
+  ];
+  let likeBonus = 0;
+  likes.forEach(item => {
+    for (const [re, w, why] of likeHits) {
+      if (re.test(item)) {
+        likeBonus += w;
+        deltas.push({ delta: +w, why: `"${item}" → ${why}` });
+        break;
+      }
+    }
+  });
+  likeBonus = Math.min(likeBonus, 1.6);
+
+  let score = baseline - distrustPenalty + likeBonus;
+  if (archetype.channel === 'branch')  { score += 0.3; deltas.push({ delta: +0.3, why: 'branch-preferring channel' }); }
+  if (archetype.channel === 'digital') { score -= 0.2; deltas.push({ delta: -0.2, why: 'digital-only channel' }); }
+  if (archetype.comms === 'technical') { score -= 0.2; deltas.push({ delta: -0.2, why: 'technical/skeptical comms' }); }
+  if (archetype.comms === 'friendly')  { score += 0.2; deltas.push({ delta: +0.2, why: 'friendly comms' }); }
+
+  score = Math.max(0, Math.min(10, Math.round(score * 10) / 10));
+  return {
+    score,
+    baseline,
+    delta: Math.round((score - baseline) * 10) / 10,
+    deltas,
+    source: 'ESS11 e04.1 (IT)',
+    sampleEffectiveN: 2554.7,
+  };
+}
+
 // Simulation logic
 function simulate(archetype, product) {
   let score = 100;
@@ -397,7 +463,7 @@ function simulate(archetype, product) {
   // Receipts (pull 2 quotes, prefer rate-relevant ones)
   const receipts = archetype.quotes.slice(0, 3);
 
-  return { score, mood, verdict, verb, line, reasons: reasons.slice(0,3), suggestions: suggestions.slice(0,4), receipts, marketing };
+  return { score, mood, verdict, verb, line, reasons: reasons.slice(0,3), suggestions: suggestions.slice(0,4), receipts, marketing, trust: computeTrust(archetype) };
 }
 
 const MOOD_META = {
@@ -643,6 +709,26 @@ function Simulator({ archetype, product, setProduct, onPickArchetype, archetypes
             <blockquote className="text-[13px] text-ink-800 leading-relaxed border-l-2 border-navy-700 pl-3.5 italic">
               {sim.line}
             </blockquote>
+            {sim.trust && (
+              <div className="pt-4 mt-1 border-t border-ink-100/70">
+                <div className="flex items-baseline justify-between mb-1.5">
+                  <div className="text-[11px] uppercase tracking-[0.14em] text-ink-400 font-medium">Trust (ESS11 IT anchor)</div>
+                  <div className="num text-[13px] font-semibold text-ink-900">
+                    {sim.trust.score.toFixed(1)}<span className="text-ink-400 font-normal">/10</span>
+                  </div>
+                </div>
+                <div className="h-1.5 rounded-full bg-paper-100 overflow-hidden relative">
+                  <div className="h-full bg-navy-700" style={{ width: `${(sim.trust.score / 10) * 100}%` }}/>
+                  <div className="absolute top-[-2px] bottom-[-2px] w-px bg-amber-500"
+                    style={{ left: `${(sim.trust.baseline / 10) * 100}%` }}
+                    title={`IT general-population baseline ${sim.trust.baseline}`}/>
+                </div>
+                <div className="mt-1 text-[11px] text-ink-500">
+                  {sim.trust.delta >= 0 ? '+' : ''}{sim.trust.delta.toFixed(1)} vs IT baseline ({sim.trust.baseline}).
+                  {' '}See <span className="font-medium text-ink-700">Sources → Trust axis methodology</span>.
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="rounded-2xl bg-paper-0 hairline p-6">

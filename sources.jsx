@@ -274,7 +274,189 @@ function FreshSignalsTile({ onToast }) {
   );
 }
 
-function Sources({ data, onPrimary, onToast }) {
+function SignalsGenerationGate({ productName, onComplete }) {
+  const [phase, setPhase] = useState('idle');
+  const [stepIdx, setStepIdx] = useState(0);
+  const steps = [
+    'Connecting to Reddit, LinkedIn, X & finance forums…',
+    'Paraphrasing posts (copyright-safe)…',
+    'Running native-speaker validator & indexing themes…',
+  ];
+  useEffect(() => {
+    if (phase !== 'running') return;
+    if (stepIdx >= steps.length) {
+      const done = setTimeout(() => onComplete?.(), 350);
+      return () => clearTimeout(done);
+    }
+    const t = setTimeout(() => setStepIdx(i => i + 1), 550);
+    return () => clearTimeout(t);
+  }, [phase, stepIdx]);
+
+  if (phase === 'idle') {
+    return (
+      <div className="space-y-6">
+        <window.SectionHeader
+          eyebrow="Phase 1 · Signals"
+          title="Generate social signals"
+          sub={`No signals have been collected for ${productName || 'this product'} yet. Run the pipeline to crawl public sources, paraphrase posts, and validate themes.`}
+        />
+        <div className="rounded-2xl bg-paper-0 hairline p-10 text-center">
+          <div className="mx-auto w-16 h-16 rounded-full bg-brand-surface grid place-items-center text-navy-900">
+            <window.Icons.Spark size={26}/>
+          </div>
+          <div className="text-[16px] font-semibold text-ink-900 mt-4">Your signal stream is empty</div>
+          <div className="text-[12px] text-ink-500 mt-1.5 max-w-[52ch] mx-auto leading-snug">
+            We haven't crawled any public chatter for this product yet. Generation usually takes a few seconds in mock mode — real runs go nightly at 04:00 UTC.
+          </div>
+          <button onClick={() => { setPhase('running'); setStepIdx(0); }}
+            className="mt-5 px-4 py-2 rounded-md text-[13px] font-semibold bg-brand text-ink-900 hover:bg-brand-emphasis inline-flex items-center gap-1.5">
+            <window.Icons.Spark size={14}/> Generate social signals
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <window.SectionHeader
+        eyebrow="Phase 1 · Signals"
+        title="Generating social signals…"
+        sub={`Crawling public sources for ${productName || 'this product'}. This usually takes a few seconds.`}
+      />
+      <div className="rounded-2xl bg-paper-0 hairline p-10">
+        <div className="mx-auto w-14 h-14 rounded-full bg-brand-surface grid place-items-center text-navy-900 mb-5">
+          <svg className="animate-spin" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+          </svg>
+        </div>
+        <div className="space-y-2.5 max-w-[420px] mx-auto">
+          {steps.map((label, i) => {
+            const done = i < stepIdx;
+            const active = i === stepIdx;
+            return (
+              <div key={label} className={`flex items-center gap-2.5 text-[12px] ${done ? 'text-ink-500' : active ? 'text-ink-900 font-semibold' : 'text-ink-300'}`}>
+                <span className={`w-4 h-4 rounded-full grid place-items-center ${done ? 'bg-brand text-ink-900' : active ? 'bg-brand-surface text-navy-900 ring-2 ring-brand' : 'bg-paper-100 text-ink-400'}`}>
+                  {done ? <window.Icons.Check size={10}/> : <span className="w-1 h-1 rounded-full bg-current"/>}
+                </span>
+                <span>{label}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TrustMethodology() {
+  const layer = (window.SASP_DATA && window.SASP_DATA.countryLayers && window.SASP_DATA.countryLayers.it) || null;
+  const baseline = layer && layer.trustBaseline;
+  const freelance = layer && layer.trustFreelanceUnder40Directional;
+  const [expanded, setExpanded] = useState(false);
+  if (!baseline) return null;
+
+  const debug = typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('debug') === '1';
+
+  const inst = baseline.institutionalTrust.items;
+  const tiles = [
+    ['social composite', baseline.socialTrust.compositeMean],
+    ['trstprl', inst.trstprl],
+    ['trstlgl', inst.trstlgl],
+    ['trstplc', inst.trstplc],
+    ['trstplt', inst.trstplt],
+    ['trstprt', inst.trstprt],
+    ['trstep',  inst.trstep],
+    ['anchor (neutral)', baseline.anchor],
+  ];
+
+  return (
+    <section className="rounded-2xl bg-paper-0 hairline p-5 space-y-4">
+      <div className="flex items-center gap-2 flex-wrap">
+        <h2 className="text-[15px] font-semibold text-ink-900">Trust axis methodology</h2>
+        <window.Pill tone="green" size="xs">ESS11 calibrated</window.Pill>
+        <window.Pill tone="outline" size="xs">IT Country Layer</window.Pill>
+      </div>
+      <p className="text-[12px] text-ink-700 leading-relaxed">
+        Trust scores are anchored to ESS11 Italy population marginals
+        (<span className="num">{baseline.meta.source}</span>,
+        DOI <span className="num">{baseline.meta.doi}</span>,
+        fieldwork {baseline.meta.fieldwork}, weighted with <code>{baseline.meta.weight}</code>,
+        effective n = <span className="num">{baseline.meta.effectiveN}</span>).
+        Neutral baseline = <span className="num font-semibold">{baseline.anchor}</span> on a 0–10 scale.
+      </p>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[12px]">
+        {tiles.map(([k, v]) => (
+          <div key={k} className="rounded-lg hairline p-2.5">
+            <div className="text-[11px] uppercase tracking-wider text-ink-400">{k}</div>
+            <div className="num text-ink-900 font-medium mt-0.5">{v}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="text-[12px] text-ink-700 leading-relaxed border-l-2 border-navy-700 pl-3 italic">
+        The SASP Trust axis is operationalized using the European Social Survey Round 11
+        social and institutional trust batteries — the EU's standard validated constructs.
+        The Italian general-population baseline (n≈2,865, ESS11 e04.1, fieldwork 2023–24)
+        anchors the dashboard's 0–10 trust scale. Segment-specific priors for under-40
+        freelance professionals are derived from the same instrument with appropriate
+        small-cell caveats. Mortgage-domain signal — confusion, product-specific risk
+        perception, decision archetypes — is sourced from Italian-native channels
+        (Finanzaonline, Banca d'Italia, Consap, MEF), not from ESS.
+      </div>
+
+      <div>
+        <button onClick={() => setExpanded(x => !x)}
+          className="text-[12px] text-ink-700 underline decoration-dotted hover:text-ink-900">
+          {expanded ? 'Hide' : 'Show'} under-40 freelance subset (n=60 — directional only)
+        </button>
+        {expanded && freelance && (
+          <div className="mt-2 rounded-lg hairline bg-paper-50 p-3 text-[12px] text-ink-700 space-y-2">
+            <div className="text-ink-900 font-semibold">
+              Under-40 freelance subset, IT (raw n={freelance.meta.rawN}, effective n={freelance.meta.effectiveN})
+            </div>
+            <p className="leading-relaxed">
+              The under-40 solo/small freelance cell in ESS11 IT is too thin to
+              statistically distinguish from the general population on Trust or
+              Satisfaction. Every observed difference — largest +0.53 on EU
+              Parliament trust, +0.37 on life satisfaction — sits inside its own
+              95% CI. Directional reference only; not a scoring input.
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-1">
+              <div className="rounded-lg hairline bg-paper-0 p-2">
+                <div className="text-[11px] uppercase tracking-wider text-ink-400">social composite</div>
+                <div className="num text-ink-900 font-medium mt-0.5">{freelance.socialTrust.compositeMean}</div>
+              </div>
+              {Object.entries(freelance.institutionalTrust.items).map(([k, v]) => (
+                <div key={k} className="rounded-lg hairline bg-paper-0 p-2">
+                  <div className="text-[11px] uppercase tracking-wider text-ink-400">{k}</div>
+                  <div className="num text-ink-900 font-medium mt-0.5">{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {debug && freelance && (
+        <div className="rounded-lg border-2 border-amber-300 bg-amber-100/40 p-3 text-[12px] space-y-2">
+          <div className="flex items-center gap-2">
+            <window.Pill tone="amber" size="xs">debug=1</window.Pill>
+            <span className="text-ink-700 font-semibold">Raw freelance subset cells</span>
+          </div>
+          <pre className="text-[11px] text-ink-700 num overflow-auto leading-snug whitespace-pre-wrap">
+{JSON.stringify(freelance, null, 2)}
+          </pre>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function Sources({ data, onPrimary, onToast, needsGeneration=false, productName='', onGenerated }) {
+  const [generating, setGenerating] = useState(needsGeneration);
   const [connectors, setConnectors] = useState(data.company);
   const [totalItems, setTotalItems] = useState(12718);
   const [activity, setActivity] = useState([
@@ -282,6 +464,16 @@ function Sources({ data, onPrimary, onToast }) {
     '09:40 · Reddit stream added 38 consumer finance posts',
     '09:37 · Website crawl indexed loan and policy FAQ updates',
   ]);
+  useEffect(() => { setConnectors(data.company); }, [data]);
+
+  if (generating) {
+    return (
+      <SignalsGenerationGate
+        productName={productName}
+        onComplete={() => { setGenerating(false); onGenerated?.(); onToast?.('Social signals ready', `${productName} now has a live signal stream.`); }}
+      />
+    );
+  }
 
   const bumpCount = (id) => ({
     gdrive: '247 policy docs',
@@ -415,6 +607,8 @@ function Sources({ data, onPrimary, onToast }) {
           </div>
         </section>
       </div>
+
+      <TrustMethodology/>
     </div>
   );
 }

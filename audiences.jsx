@@ -176,12 +176,96 @@ function ArchetypeCard({ a, onUse, density, onToast }) {
   );
 }
 
-function Audiences({ archetypes, onUse, density, setDensity, lastGenerated='09:18', onRegenerated, onToast }) {
+function SegmentsGenerationGate({ productName, onComplete }) {
+  const [phase, setPhase] = useState('idle');
+  const [stepIdx, setStepIdx] = useState(0);
+  const steps = [
+    'Clustering CRM cohorts on affordability & life-stage…',
+    'Aligning clusters with validated social signals…',
+    'Scoring trust, channel & comms preferences…',
+  ];
+  useEffect(() => {
+    if (phase !== 'running') return;
+    if (stepIdx >= steps.length) {
+      const done = setTimeout(() => onComplete?.(), 350);
+      return () => clearTimeout(done);
+    }
+    const t = setTimeout(() => setStepIdx(i => i + 1), 550);
+    return () => clearTimeout(t);
+  }, [phase, stepIdx]);
+
+  if (phase === 'idle') {
+    return (
+      <div className="space-y-6">
+        <SectionHeader
+          eyebrow="Phase 2 · Customer segments"
+          title="Generate customer segments"
+          sub={`Signals are in for ${productName || 'this product'}. Run clustering to distil them into named, evidence-backed segments.`}
+        />
+        <div className="rounded-2xl bg-paper-0 hairline p-10 text-center">
+          <div className="mx-auto w-16 h-16 rounded-full bg-brand-surface grid place-items-center text-navy-900">
+            <window.Icons.Audiences size={26}/>
+          </div>
+          <div className="text-[16px] font-semibold text-ink-900 mt-4">No segments yet</div>
+          <div className="text-[12px] text-ink-500 mt-1.5 max-w-[52ch] mx-auto leading-snug">
+            We've collected the signals — now let's turn them into customer segments. The clustering pass weighs CRM data, policy constraints, and social evidence.
+          </div>
+          <button onClick={() => { setPhase('running'); setStepIdx(0); }}
+            className="mt-5 px-4 py-2 rounded-md text-[13px] font-semibold bg-brand text-ink-900 hover:bg-brand-emphasis inline-flex items-center gap-1.5">
+            <window.Icons.Spark size={14}/> Generate segments
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader
+        eyebrow="Phase 2 · Customer segments"
+        title="Generating customer segments…"
+        sub={`Clustering ${productName || 'this product'}'s data. A real pass would take a few minutes — mock mode is faster.`}
+      />
+      <div className="rounded-2xl bg-paper-0 hairline p-10">
+        <div className="mx-auto w-14 h-14 rounded-full bg-brand-surface grid place-items-center text-navy-900 mb-5">
+          <svg className="animate-spin" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+          </svg>
+        </div>
+        <div className="space-y-2.5 max-w-[440px] mx-auto">
+          {steps.map((label, i) => {
+            const done = i < stepIdx;
+            const active = i === stepIdx;
+            return (
+              <div key={label} className={`flex items-center gap-2.5 text-[12px] ${done ? 'text-ink-500' : active ? 'text-ink-900 font-semibold' : 'text-ink-300'}`}>
+                <span className={`w-4 h-4 rounded-full grid place-items-center ${done ? 'bg-brand text-ink-900' : active ? 'bg-brand-surface text-navy-900 ring-2 ring-brand' : 'bg-paper-100 text-ink-400'}`}>
+                  {done ? <window.Icons.Check size={10}/> : <span className="w-1 h-1 rounded-full bg-current"/>}
+                </span>
+                <span>{label}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Audiences({ archetypes, onUse, density, setDensity, lastGenerated='09:18', onRegenerated, onToast, needsGeneration=false, productName='', onGenerated }) {
+  const [generating, setGenerating] = useState(needsGeneration);
   const [filter, setFilter] = useState('');
   const [regenning, setRegenning] = useState(false);
   const [regenCount, setRegenCount] = useState(0);
   const [newPosts, setNewPosts] = useState(418);
   const [newContacts, setNewContacts] = useState(12);
+  if (generating) {
+    return (
+      <SegmentsGenerationGate
+        productName={productName}
+        onComplete={() => { setGenerating(false); onGenerated?.(); onToast?.('Segments ready', `${productName} now has ${archetypes.length} customer segments.`); }}
+      />
+    );
+  }
   const visible = archetypes.filter(a => {
     if (!filter) return true;
     const q = filter.toLowerCase();
