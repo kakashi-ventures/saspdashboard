@@ -211,6 +211,17 @@ function App() {
   const handleGenerate = () => {
     const time = advanceMockClock(4);
     setLastGenerated(time);
+    // Coming from the Signals page's "Generate segments" button — the
+    // StatusStrip already showed its own spinner, so dismiss the empty-state
+    // gate and drop the user straight onto the populated segments grid.
+    if (activeProduct) {
+      setFreshSegmentProductIds(prev => {
+        if (!prev.has(activeProduct.id)) return prev;
+        const next = new Set(prev);
+        next.delete(activeProduct.id);
+        return next;
+      });
+    }
     setScreen('audiences');
     showToast('Segment set ready', `${archetypes.length} customer segments regenerated at ${time}.`);
   };
