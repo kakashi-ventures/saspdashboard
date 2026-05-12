@@ -23,7 +23,7 @@ import {
   writeSignal,
   type Signal,
 } from './_lib/storage';
-import { paraphraseWithClaude, VerbatimLeakError } from './_lib/paraphrase';
+import { paraphraseWithLLM, VerbatimLeakError } from './_lib/paraphrase';
 
 const MAX_PARAPHRASES_PER_RUN = 12; // hard cap so a slow Claude run can't exhaust the function budget
 
@@ -52,7 +52,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       if (await isDuplicate(original_hash)) continue;
 
       try {
-        const para = await paraphraseWithClaude(post.text);
+        const para = await paraphraseWithLLM(post.text);
         if (para.theme === 'OTHER') continue;
         const sig: Signal = {
           id: newSignalId(),

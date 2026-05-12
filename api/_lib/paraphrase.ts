@@ -1,4 +1,9 @@
-// Claude-based paraphrase + theme tag, with verbatim-leak guard.
+// LLM-based paraphrase + theme tag, with verbatim-leak guard.
+//
+// v0 uses OpenAI (gpt-4o-mini) because the project's existing API key is from
+// OpenAI (`sk-proj-…`). The methodology is LLM-vendor-agnostic — paraphrase is a
+// mechanical step, not the core epistemic work. Swappable to Claude / others
+// later without changing the pipeline contract.
 //
 // Posture (per INGESTION_NARRATIVE.md §3 / §5):
 //   - Paraphrase MUST preserve semantic content while breaking exact string match.
@@ -7,19 +12,19 @@
 //   - Native-Italian HITL is still the final gate downstream — this guard is the
 //     mechanical defence, not a substitute for human review.
 
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { THEMES_PROMPT_BLOCK, type ThemeId } from './themes';
 
-const MODEL = 'claude-haiku-4-5-20251001';
+const MODEL = 'gpt-4o-mini';
 const MAX_RETRIES = 2;
 const VERBATIM_NGRAM = 4;
 
-let _client: Anthropic | null = null;
-function client(): Anthropic {
+let _client: OpenAI | null = null;
+function client(): OpenAI {
   if (_client) return _client;
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) throw new Error('ANTHROPIC_API_KEY is not set');
-  _client = new Anthropic({ apiKey: key });
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) throw new Error('OPENAI_API_KEY is not set');
+  _client = new OpenAI({ apiKey: key });
   return _client;
 }
 
@@ -62,9 +67,9 @@ export function detectVerbatimLeak(original: string, paraphrase: string): string
   return null;
 }
 
-const SYSTEM_PROMPT = `You are processing Italian-language forum posts about Italian mortgages for an audience-research pipeline. Your job:
+const SYSTEM_PROMPT = `You are processing Italian-language editorial paragraphs about Italian mortgages, P.IVA / freelance finance, and rate dynamics for an audience-research pipeline. Your job:
 
-1. PARAPHRASE the post in Italian, preserving the speaker's belief, fear, heuristic, or reasoning pattern. The paraphrase must not reproduce any sequence of 4 or more consecutive words from the original. Restructure phrasing aggressively. Keep the same emotional register (formal/informal/sarcastic).
+1. PARAPHRASE the paragraph in Italian, preserving the speaker's belief, fear, heuristic, framing, or reasoning pattern. The paraphrase must not reproduce any sequence of 4 or more consecutive words from the original. Restructure phrasing aggressively. Keep the same register (formal/informal/sarcastic).
 
 2. THEME-TAG using exactly one of these IDs:
 ${THEMES_PROMPT_BLOCK}
@@ -74,10 +79,10 @@ ${THEMES_PROMPT_BLOCK}
 Output JSON only, no preamble or commentary:
 {"paraphrase": "...", "theme": "A|B|C|D|E|F|OTHER", "confidence": 0.0-1.0}
 
-If the post is off-topic (not about mortgages, freelance finance, rates, costs, or Italian banking), return theme "OTHER".`;
+If the paragraph is off-topic (not about mortgages, freelance finance, rates, costs, regulation, or Italian banking), return theme "OTHER".`;
 
 function buildUserMessage(original: string, retryNote?: string): string {
-  const base = `Italian forum post to process:\n\n${original}`;
+  const base = `Italian text to process:\n\n${original}`;
   return retryNote ? `${base}\n\n${retryNote}` : base;
 }
 
@@ -96,12 +101,11 @@ function parseResponse(text: string): RawResponse {
   try {
     return JSON.parse(trimmed) as RawResponse;
   } catch {
-    // Fallback: try to extract the first {...} block.
     const match = trimmed.match(/\{[\s\S]*\}/);
     if (match) {
       try { return JSON.parse(match[0]) as RawResponse; } catch { /* fallthrough */ }
     }
-    throw new Error(`Claude returned non-JSON: ${trimmed.slice(0, 200)}`);
+    throw new Error(`LLM returned non-JSON: ${trimmed.slice(0, 200)}`);
   }
 }
 
@@ -111,27 +115,28 @@ function coerceTheme(raw: unknown): ThemeId {
   return 'OTHER';
 }
 
-export async function paraphraseWithClaude(original: string): Promise<ParaphraseResult> {
+export async function paraphraseWithLLM(original: string): Promise<ParaphraseResult> {
   let lastLeak: string | null = null;
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const retryNote = attempt > 0 && lastLeak
       ? `Your previous attempt reproduced the verbatim phrase "${lastLeak}". Rewrite more aggressively — split clauses, swap synonyms, restructure word order. Do not preserve any 4-word sequence from the original.`
       : undefined;
 
-    const resp = await client().messages.create({
+    const resp = await client().chat.completions.create({
       model: MODEL,
       max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: buildUserMessage(original, retryNote) }],
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: buildUserMessage(original, retryNote) },
+      ],
     });
 
-    const textBlock = resp.content.find(b => b.type === 'text');
-    if (!textBlock || textBlock.type !== 'text') {
-      throw new Error('Claude returned no text block');
-    }
-    const parsed = parseResponse(textBlock.text);
+    const content = resp.choices[0]?.message?.content;
+    if (!content) throw new Error('OpenAI returned empty content');
+    const parsed = parseResponse(content);
     const paraphrase = String(parsed.paraphrase || '').trim();
-    if (!paraphrase) throw new Error('Empty paraphrase from Claude');
+    if (!paraphrase) throw new Error('Empty paraphrase from LLM');
 
     const leak = detectVerbatimLeak(original, paraphrase);
     if (leak) {
