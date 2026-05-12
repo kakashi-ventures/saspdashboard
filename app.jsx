@@ -172,7 +172,7 @@ function App() {
     setProduct(PRODUCT_DEFAULTS);
     setScreen('portfolio');
     setShowOnboarding(false);
-    showToast('Welcome to SASP', `${newOrg.name} workspace created. Add your first product to begin.`);
+    showToast('Welcome to Value', `${newOrg.name} workspace created. Add your first product to begin.`);
   };
 
   const handleCreateOrg = ({ name }) => {
@@ -349,7 +349,7 @@ function App() {
             )
           )}
           <footer className="mt-16 text-[11px] text-ink-400 text-center num">
-            SASP
+            Value
           </footer>
         </main>
       </div>
